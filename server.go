@@ -13,8 +13,9 @@ import (
 	"time"
 )
 
-const apiKey = "devkey"
-const apiSecret = "secret"
+const apiKey = "dgh"
+const apiSecret = "qwertyuiopasdfghjklzxcvbnm123456789"
+const liveKitServer = "http://192.168.22.129:7880"
 
 // getJoinToken 获取房间的token
 // room 房间号
@@ -36,21 +37,20 @@ func getJoinToken(roomId, identity string) (string, error) {
 // ctx 上下文
 // roomId 房间号
 func startRecode(ctx *gin.Context, roomId string) {
-	egressClient := lksdk.NewEgressClient("http://localhost:7880", apiKey, apiSecret)
+	egressClient := lksdk.NewEgressClient(liveKitServer, apiKey, apiSecret)
 	fileRequest := &livekit.RoomCompositeEgressRequest{
 		RoomName: roomId,
 		Layout:   "speaker",
 		Output: &livekit.RoomCompositeEgressRequest_File{
 			File: &livekit.EncodedFileOutput{
 				FileType: livekit.EncodedFileType_MP4,
-				Filepath: "livekit-demo/my-room-test.mp4",
-				Output: &livekit.EncodedFileOutput_S3{
-					S3: &livekit.S3Upload{
-						Region:    "zh-east-1",
-						AccessKey: "xtm",
-						Secret:    "Xtm@123456",
-						Bucket:    "mjts",
-						Endpoint:  "http://192.168.10.240:9000",
+				Filepath: fmt.Sprintf("livekit-demo/%s-%v.mp4", roomId, time.Now().Unix()),
+				Output: &livekit.EncodedFileOutput_AliOSS{
+					AliOSS: &livekit.AliOSSUpload{
+						AccessKey: "LTAI4GBSMnmxU2TscBdKkubA",
+						Secret:    "oskpyefOnAWSB3Mh9yNAlDbUHvEdfv",
+						Endpoint:  "oss-cn-shenzhen.aliyuncs.com",
+						Bucket:    "douguohai",
 					},
 				},
 			},
@@ -65,7 +65,7 @@ func startRecode(ctx *gin.Context, roomId string) {
 }
 
 func closeRecode(ctx *gin.Context, egressID string) {
-	egressClient := lksdk.NewEgressClient("http://localhost:7880", apiKey, apiSecret)
+	egressClient := lksdk.NewEgressClient(liveKitServer, apiKey, apiSecret)
 	info, err := egressClient.StopEgress(ctx, &livekit.StopEgressRequest{
 		EgressId: egressID,
 	})
@@ -83,6 +83,7 @@ func main() {
 		c.JSON(200, gin.H{
 			"message": "pong",
 		})
+		return
 	})
 	r.GET("/getToken/:roomId/:userId", func(c *gin.Context) {
 		roomId := c.Param("roomId")
@@ -94,6 +95,7 @@ func main() {
 				Code:    200,
 				Message: token,
 			})
+		return
 	})
 
 	r.GET("/recode/:roomId", func(c *gin.Context) {
@@ -105,6 +107,7 @@ func main() {
 				Code:    200,
 				Message: "ok",
 			})
+		return
 	})
 
 	r.GET("/end/:egressID", func(c *gin.Context) {
@@ -116,6 +119,7 @@ func main() {
 				Code:    200,
 				Message: "ok",
 			})
+		return
 	})
 	r.Run() // 监听并在 0.0.0.0:8080 上启动服务
 	log.Fatal(http.ListenAndServe(":8080", nil))
